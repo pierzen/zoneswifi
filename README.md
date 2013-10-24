@@ -42,3 +42,7 @@ Screen design takes account of Small screen devices
 
 At startup, the left panel is hidden. A button lets's see the description. Text is also minimal.
 
+License
+-------
+see https://github.com/pierzen/zoneswifi/blob/master/LICENSE
+
