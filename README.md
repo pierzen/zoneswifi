@@ -42,11 +42,6 @@ Parameters such as minZoomLevl and maxZoomLevel are not enough to limit zoom lev
 *	minZoomLevel: 10,
 *	resolutions: [152.87405654907226, 76.4370282714844,38.2185141357422, 19.1092570678711, 9.55462853393555, 4.77731426696777, 2.38865713348389, 1.19432856674194]
 
-Screen design takes account of Small screen devices
----------------------------------------------------
-
-At startup, the left panel is hidden. A button lets's see the description. Text is also minimal.
-
 License
 -------
 see https://github.com/pierzen/zoneswifi/blob/master/LICENSE
