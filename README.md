@@ -28,10 +28,12 @@ http://wiki.openstreetmap.org/wiki/User:SunCobalt/OpenLayers_Suche
 nominatim-i8n.csv Nominatim Results Translation file have been edited to add the french translation.
 
 
-Layer Display Strategy
+Wifi Layer Display Cluster Strategy
 ----------------------
 
-An Openlayers Layer Display Strategy is used to control the look of the Wifi point markers.  From zoom level 10, the Cluster strategy lets represent Wifi points as clusters of various size. From zoom level 13, the no. of Wifi points in the cluster is indicated. Individual Wifi points a wifi points are represented with a Wifi icon. From level 16, the size of the icon is increased to facilitate it's localisation.
+The context function in the style_wifi_couche Style applies various rules based on number of points and zoom level. From zoom level 10 to 12, the size of clusters are bigger. From zoom level 13, 
+ clusters provide the no. of Wifi points. Wifi icons represent individual points. From level 16, we have to take into account the fact that the POI's icons are added to the Mapnik layer.
+ The size of the icon is increased to facilitate it's localisation. This could be replaced with a circle and larger strokeWidth. 
 
 Limit the Vector Layer zoom levels
 ----------------------------------
