@@ -12,15 +12,20 @@ Users locate towns to see the Wifi points. Once the search is completed, cluster
 
 We plan to add a button to request for Wifi points inside the viewport. This would let users navigate through the map and then ask for Wifi points.
 
-Technical aspects
+Technical Notes
 =================
+
+url on the online map : http://pierzen.dev.openstreetmap.org/zoneswifi/
 
 Searches using Nominatim
 ------------------------
 
 Users make Nominatim Search to locate cities. From this point, the viewport boundaries are calculated at zoom 11. An Overpass API request is made to extract the Wifi POI's for this bounding box.
 
-Nominatim Results Translation is assured via nominatim-i8n.csv. We have added the french translation to this file.
+Nominatim source code comes from OpenStreetMap user suncobalt.
+http://wiki.openstreetmap.org/wiki/User:SunCobalt/OpenLayers_Suche
+
+nominatim-i8n.csv Nominatim Results Translation file have been edited to add the french translation.
 
 
 Layer Display Strategy
@@ -31,7 +36,7 @@ An Openlayers Layer Display Strategy is used to control the look of the Wifi poi
 Limit the Vector Layer zoom levels
 ----------------------------------
 
-Various discussions show that it is uneasy to control zoom level appropriately. Some tricks are necessary. We use the parameters as below. But, then, zoom levels are referenced from zero. Zero correspond to zoom level 10.
+Parameters such as minZoomLevl and maxZoomLevel are not enough to limit zoom levels with OpenLayers Vector Layer. There are many discussions on this subject and various solutions are proposed. We are using the parameters as below.
 
 *	zoomOffset:10,
 *	minZoomLevel: 10,
