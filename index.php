@@ -1,33 +1,211 @@
-<?php  /* zonesWIFI */  ?>
+<?php  
+/*  zonesWIFI version 0.5.1
+	copyright : Pierre Béland
+	octobre 2013, 2017
+	First version, hackation in Montreal, 2013
+	2017-04-25 Simplified design
+	sources : https://github.com/pierzen/zoneswifi/
+	Nominatim Search : Courtesy of MapQuest
+	OSM Extraction : Courtesy of Overpass-API Service
+	Javascript map tool : OpenLayers API 2.13
+	Base Map : OpenStreetMap Contributors
+*/
+
+error_reporting(E_ALL);
+// languages in zones wifi
+$langues= array("fr","en");
+$uri_script=$_SERVER["SCRIPT_URI"];
+// Navigator preference - prefered language
+$accept_languages=explode(',',$_SERVER["HTTP_ACCEPT_LANGUAGE"]);
+//echo $accept_languages;
+//echo "debut PHP";
+/*
+if(isset($_POST['zoom'])) {
+	$zoom=htmlentities($_POST['zoom']);
+   echo "PHP: zoom ",$zoom;
+	//console.log($zoom);
+}
+if(isset($_POST['lat'])) {
+	$lat=htmlentities($_POST['lat']);
+   echo "PHP: lat ",$lat;
+	//console.log($lat);
+}
+if(isset($_POST['lon'])) {
+	$lon=htmlentities($_POST['lon']);
+   echo "PHP: lon ",$lon;
+	// console.log($lon);
+}
+*/
+// langue via 1. post (user input selection) or 2. url get
+if(isset($_POST['lang'])) {
+	$_POST['lang']=htmlentities($_POST['lang']);
+	if (in_array($_POST['lang'], $langues))	{$lang=$_POST['lang']; }
+}
+if (isset($lang)) { 
+	;// modif via formulaire 
+	}
+elseif(isset($_GET["lang"])){
+	if (!get_magic_quotes_gpc())
+		{ $_GET["lang"] = addslashes($_GET["lang"]); }
+	$lang=strtolower($_GET["lang"]);
+}
+else 
+	{foreach($accept_languages as $accept_lang)
+		if (in_array(substr($accept_lang,0,2),$langues))
+		{
+			$lang=$accept_lang;
+			break;
+		}
+	}
+$ua=$_SERVER['HTTP_USER_AGENT'];
+if (strstr($ua, 'Android') || strstr($ua, 'iPhone') || strstr($ua, 'iPad') || strstr($ua, 'iPod') || strstr($ua, 'BlackBerry'))
+$mobile_os=1;
+else
+$mobile_os=0;
+if ($mobile_os==1)	
+	 {$wordsize="11px"; }
+else {$wordsize="22px"; }
+
+//echo "PHP: user_agent ",  $_SERVER['HTTP_USER_AGENT'], "<br/>";
+//echo "PHP: px mobile_os ", $wordsize, $mobile_os, "<br/>";
+	
+if (!isset($lang))  
+ {$lang="fr";}
+switch ($lang) {
+case "en":
+    break;
+case "fr":
+    break;
+default:    $lang="fr";
+}
+
+//echo "PHP lang=$lang";
+
+// i18n
+switch ($lang) {
+case "en":
+$i18n = array(
+    "head-title" => "WIFIzones : Map of free Wifi HotSpots",
+    "head-description" => "This map locates the free Wifi HotSpot zones from OpenStreetMap data (OSM).",
+    "osm-attribution" => "&copy; <a href=\'http://www.openstreetmap.org/copyright\'>OpenStreetMap contributors</a>",
+    "Zones Wifi" => "Wifi Zones",
+    "naviguer" => "
+	<p>On this Map, the <em class=\"bleu\">Wifi HotSpots</em> icons let's locate the free Wifi HotSpots. Click on the icons to show the description of each facility.
+	</p>
+	<p> Search a town and the Wifi HotSpots will be located for the zone. From this point,
+	zoom-in to see the various Wifi HotSpots and the description of esch facillity.
+	",
+    "contribuez" => "
+		<p>Wifi HotSpots	: Service Overpass, ©&nbsp; 
+		<a href=\"#\" onclick=\"lien(\"osm_copyright\");return false;\">OpenStreetMap ODbL</a></p>
+		<p>Localities : Nominatim Search, courtesy of 
+		<a href=\"#\" onclick=\"lien(\"nominatim_mapquest\");return false;\">MapQuest</a>.</p>
+	",
+	"points_wifi" => "Wifi HotSpots",
+	"msg_wifi_point" => " Wifi Points - Zoom-in to locate these Wifi points.",
+    "msg_search" => "Search ...",
+    "rechercher" => "Search",
+    "localiser" => "Locate me",	
+    "my_location" => "My Location",
+    "tlocaliser" => "Show your localisation",
+    "lieu-non-identifie" => "Unknown facility"
+	);
+    break;
+case "fr":
+$i18n = array(
+    "head-title" => "zonesWIFI : Carte des points Wifi gratuits (Données OpenStreetMap)",
+    "head-description" => "Cette carte localise les Points Wifi gratuits à partir de OpenStreetMap (OSM).",
+    "osm-attribution" => "&copy; <a href=\'http://www.openstreetmap.org/copyright\'>contributeurs OpenStreetMap</a>",
+    "Zones Wifi" => "Zones Wifi",
+    "naviguer" => "
+	<p>Sur la carte du Sans Fil, les icônes des <em class=\"bleu\">Points Wifi</em> permettent de localiser les zones d'accès gratuit au Wifi. Cliquez sur ces icônes pour afficher la description des lieux.</p>
+	<p> Recherchez une ville et les donnnées seront extraites pour la zone affichée à l'écran. De là, il est possible de zoomer et voir le détail sur les différents points Wifi.
+	",
+    "contribuez" => "
+		<p>Points Wifi	: ©&nbsp;Service Overpass, 
+		<a href=\"#\" onclick=\"lien(\"osm_copyright\");return false;\">OpenStreetMap ODbL</a></p>
+		<p>Localités : Recherche Nominatim, courtoisie de  
+		<a href=\"#\" onclick=\"lien(\"nominatim_mapquest\");return false;\">MapQuest</a>.</p>
+	",
+	"points_wifi" => "Points Wifi",
+	"msg_wifi_point" => " Points Wifi - Zoomez davantage pour localiser ces Points Wifi.",
+    "msg_search" => "Rechercher ...",
+    "rechercher" => "Rechercher",
+    "localiser" => "Où suis-je ?",
+    "my_location" => "Ma localisation",	
+    "tlocaliser" => "Afficher votre localisation",
+    "lieu-non-identifie" => "Lieu non identifié"
+	);
+    break;
+default:    ;
+}
+  ?>
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="<?php echo $lang;?>">
 <head>
 <meta charset="utf-8">
-  <title>Zones Wifi</title>
-  <meta name="viewport" content="width=device-width" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="author" content="Pierre Béland">
-  <link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico">
-  <script type="application/javascript" src="http://openlayers.org/api/2.13/OpenLayers.js"></script>
+<title><?php echo $i18n["head-title"];?></title>
+<meta name="viewport" content="width=device-width" />
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="author" content="Pierre Béland">
+<meta name="description" content="<?php echo $i18n["head-description"];?>" />
+<meta name="referrer" content="origin">
+<link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="../ol2/OpenLayers.js" type="text/javascript"></script>
 <!--
+  <script src="http://openlayers.org/api/2.13/Geolocation.js"></script>
   <script type="application/javascript" src="http://openlayers.org/api/2.13/OpenLayers.mobile.js"></script>
 -->
-  <script type="application/javascript" src="js/fr.js"></script>
-  <script type="application/javascript" src="OpenStreetMap.js"></script>
-  <script type="application/javascript" src="overpass.js"></script>
-  <script type="application/javascript" src="OSMMeta.js"></script>
-  <script type="application/javascript" src="LoadingPanel.js"></script>
-  <script type="application/javascript">
+<script type="application/javascript" src="js/fr.js"></script>
+<script type="application/javascript" src="OpenStreetMap.js"></script>
+<script type="application/javascript" src="overpass.js"></script>
+<script type="application/javascript" src="OSMMeta.js"></script>
+<script type="application/javascript" src="LoadingPanel.js"></script>
+<script type="application/javascript">
 //<![CDATA[
-/*
-	copyright : Pierre Béland
-	octobre 2013
-	sources : https://github.com/pierzen/zoneswifi/
-	
-*/
-var lat = 45.5222;
-var lon = -73.7186;
-var zoom = 10;
+var isMobile = navigator.userAgent.match(/(iPhone|iPod|iPad|Android|BlackBerry)/);
+//OpenLayers.ImgPath = "../img/";
+// traduction
+var lang="<?php echo $lang;?>";
+// debug console.log("lang="+lang);
+var self="<?php echo $_SERVER['PHP_SELF'];?>";
+msg_wifi_point="<?php echo $i18n["msg_wifi_point"];?>";
+points_wifi="<?php echo $i18n["points_wifi"];?>";
+// debug console.log("debut Js lang="+lang);
+var markers = new OpenLayers.Layer.Markers( "Markers" );
+var POI = new OpenLayers.Layer.Vector("Loc.");
+
+
+var geoloc = null;
+//var lat = 45.5222;
+//var lon = -73.7186;
+//var zoom = 10;
+// départ - selection wifi pour sherbrooke
+//selection_wifi_lonlat(lon=-72.1527,lat=45.3965,zoom=10);
+// départ - Geoloc, sinon selection wifi pour quebec
+var lon=-71.1598; var lat=46.8226;var zoom=12;var startZoom=zoom;
+//getLocation();
+// debug console.log("Apres getLocation lat="+lat+" lon="+lon);
+
+var url = window.location.href
+// debug console.log("url="+url);
+var uri_hash = window.location.hash
+// debug console.log("hash="+uri_hash);
+var uriHash = uri_hash.replace(/^#/, "") //.split(";");
+var debug= "debug, uriHash = " +uriHash;
+var kvPair = uriHash.split("/");
+if (kvPair.length>2) {
+startZoom = kvPair[0];
+zoom=startZoom;
+lat = kvPair[1];
+lon = kvPair[2];
+// debug console.log("Uri="+kvPair);
+// debug console.log("Init", startZoom, lat, lon);
+}
+var  LonLat = new OpenLayers.LonLat( lon,lat).transform(new OpenLayers.Projection("EPSG:4326"),"EPSG:900913");
+var url_lonlat;
 var map;
 var fenetre_popup;
 // controle affichage des marqueurs
@@ -35,24 +213,10 @@ var fenetre_popup;
 var zoom_nb=3;
 // icones plus gros et plus clair à partir de zoom=16
 var zoom_icone_plus=5;
-
 var wifi_region;
 var largeur_popup,hauteur_popup;
 // panneau glissant gauche affiché  au départ
 var showpanel=0;
-
-var coord_region=new Array();
-coord_region["montreal"]={zoom:10,lat:45.5222,lon:-73.7186}
-coord_region["sainte-agathe"]={zoom:10,lat:46.1332,lon:-74.0630}
-coord_region["quebec"]={zoom:10,lat:46.8226,lon:-71.1598}
-coord_region["trois-rivieres"]={zoom:10,lat:46.4596,lon:-72.6787}
-coord_region["sherbrooke"]={zoom:10,lat:45.3965,lon:-72.1527}
-console.log("sherbrooke zoom "+coord_region["sherbrooke"].zoom);
-var url_trois_rivieres="";
-var url_est="";
-var url_saguenay="";
-var url_outaouais="";
-var url_abitibi="";
 
 if (document.body)
 {
@@ -63,8 +227,8 @@ if (largeur_ecran<=640) {
 	largeur_popup=250;hauteur_popup=150;
 	}
 	else {largeur_popup=300;hauteur_popup=200;
-	}
-
+	}	
+	
     function fenetre_popup_info() {
 		var fenetre_popup=window.open("zoneswifi_info.html",
 		"pop1","width=200,height=200");
@@ -72,14 +236,23 @@ if (largeur_ecran<=640) {
 		fenetre_popup.focus();
 		onblur="window.focus()";
     }
+	
+function sel_lang (form) {
+    $lang = form.inputbox.value;
+    alert ("lang= " + $lang);
+}	
+	
 // apres recherche nominatimm, - demande extraction selon lon,lat,zoom --> bbox calculé
 function selection_wifi_lonlat(lon,lat,zoom) {
 
-	console.log("sel_wifi lon,lat,zoom "+lon+", "+lat+",",+zoom);
+	// debug console.log("sel_wifi lon,lat,zoom "+lon+", "+lat+",",+zoom);
+	// ferme fenêtre de résultats Nominatim;
+	cname_result=document.getElementById('result').className
+	document.getElementById('result').className='hidden';
 	zoom=zoom-10;if (zoom<0) {zoom=0;}
 	for (nb in map.layers) {
 		if (nb > 0) {
-			console.log("enlève couche wifi précédente, no "+nb);
+			// debug console.log("enlève couche wifi précédente, no "+nb);
 			map.layers[nb].setVisibility(false);
 			map.removeLayer(map.layers[nb], false);
 		}
@@ -92,64 +265,39 @@ function selection_wifi_lonlat(lon,lat,zoom) {
 	var WGS84 = new OpenLayers.Projection("EPSG:4326");
 	bounds.transform(map.getProjectionObject(), WGS84);
 	var bbox=String(bounds.bottom.toFixed(5)+","+bounds.left.toFixed(5)+","+bounds.top.toFixed(5)+","+bounds.right.toFixed(5));
-	console.log("bounds "+ bounds+" -> l "+bounds.left+",b "+bounds.bottom+",r "+bounds.right+",t "+bounds.top);
-	console.log("bbox "+ bbox);
+	// debug console.log("bounds "+ bounds+" -> l "+bounds.left+",b "+bounds.bottom+",r "+bounds.right+",t "+bounds.top);
+	// debug console.log("bbox "+ bbox);
 	var url1="http://overpass-api.de/api/interpreter?data=[timeout:30];node[internet_access=wlan](";
 	var url3=");out+meta;(way[internet_access=wlan](";
 	var url5=");node(w););out+meta;";
-	var url_lonlat=url1+bbox+url3+bbox+url5;
-	console.log("url_lonlat "+url_lonlat);
+	url_lonlat=url1+bbox+url3+bbox+url5;
+	// debug console.log("url_lonlat "+url_lonlat);
 	//----------	
-	couche_wifi (couche=wifi_region,
+	wifi_layer_request_hotspots (couche=wifi_region,
 	desc="Points Wifi", url=url_lonlat, affichage=true);
 	
 }
-		
+
+function lien(nom) {
+ var url ="Erreur - fonction lien";
+ if (nom=="osm") {
+	url="http://www.openstreetmap.org/?lat="+lat+"&lon="+lon+"&zoom="+zoom;}
+ else if (nom=="osm_copyright") {
+	url="http://www.openstreetmap.org/copyright";}
+ else if (nom=="nominatim_mapquest") {
+	url="http://www.mapquest.com";}
+ 
+ window.open(url," ","left=20;width=90%;height=90%");
+ }
+ 
 function afficher_contribuez() {
 	var contribuez=document.getElementById("contribuez");
-	console.log("contribuez="+contribuez.className);
-	if (contribuez.className=="cacher") {contribuez.className="cadre l90"}
-	else {contribuez.className="cacher"}
-	console.log("contribuez=>"+contribuez.className);
+	// debug console.log("contribuez="+contribuez.className);
+	if (contribuez.className=="hidden") {contribuez.className="cadre l100";}
+	else {contribuez.className="hidden";}
+	// debug console.log("contribuez=>"+contribuez.className);
 }
 		
-function SlidePanel()
-{
-   leftpanel = document.getElementById('section_gauche');
-   contribuez = document.getElementById('contribuez');
-   controlpanel = document.getElementById('control_panel');
-   controltxt = document.getElementById('controltxt');
-   controlbtn = document.getElementById('controlbtn');
-   rightpanel = document.getElementById('section_droite');
-   if(showpanel == 1)
-   {
-    console.log(showpanel+" cacher + droite=l100");
-    showpanel=0;
-	controlpanel.innerHTML="	<span id='controltxt'>Légende</span><a id='controlbtn' class='open' href='#' onclick='SlidePanel();' title='Afficher la Légende'>&raquo;";
-	controltxt.innerHTML="Légende";
-	controlbtn.innerHTML='&raquo;';
-	rightpanel.className="l100";
-	contribuez.className="cacher";
-	leftpanel.className="cacher";
-    console.log(showpanel+" bouton="+ controlbtn+ " txt="+controltxt);
-	document.getElementById("map").style.width = "100%";
-   }
-   else
-   {
-    console.log(showpanel+" afficher + droite=l75");
-	showpanel=1;
-	controlpanel.innerHTML="	<span id='controltxt'> </span><a id='controlbtn' class='open' href='#' onclick='SlidePanel();' title='Agrandir la Carte'>&laquo;&laquo;";
-	controltxt.innerHTML=" ";
-	controlbtn.innerHTML='&laquo;&laquo;';
-	rightpanel.className="l75";
-	leftpanel.className="l25";
-	contribuez.className="cacher";
-    console.log(showpanel+" bouton="+ controlbtn+ " txt="+controltxt);
-	document.getElementById("map").style.width = "100%";
-   }
-   map.updateSize();
-}
-
 function icone(feature,nb) {
 	img="img/wifi_bleu.png";
 	// img pour operateurs ile-sans-fil,zap,etc.
@@ -162,7 +310,7 @@ function icone(feature,nb) {
     else if (wifi_operator.indexOf("zap") ==0) {
 		img="img/wifi_zap.png"; 
 	}
-// console.log(wifi_operator+' img='+img)
+// // debug console.log(wifi_operator+' img='+img)
 return img;
 }
 var style_wifi_couche = new OpenLayers.Style({
@@ -170,83 +318,28 @@ var style_wifi_couche = new OpenLayers.Style({
 	label:" ${nombre}",
 	fontColor: "${couleur}",
 	fontSize: "${police}",
-	fillColor: "#0033FF",
+	fillColor: "# 033FF",
 	fillOpacity: "${fillOpacity}",
 	strokeColor: "#330099",
 	strokeWidth: "${strokeWidth}",
 	strokeOpacity: 1,
 	externalGraphic: "${externalGraphic}",
-	graphicWidth: "${graphicWidth}"
-
-	
-	/*
-	graphicXOffset: 2,
-	graphicYOffset: -2
-	graphicXOffset: "${graphicXOffset}",
-	graphicYOffset: "${graphicYOffset}"
-	
-function layerContext()
-{
-    theXOffset    = 10;
-    theYOffset    = 10;
-    theResolution = map.getResolution();
- 
-    var context = {
-        getXO : function(){
-            return theXOffset * theResolution / map.getResolution();
-        },
-        getYO : function(){
-            return theYOffset * theResolution / map.getResolution();
-        }
-    };
-	
-externalgraphiq attrib elem=count
-externalgraphiq feature elem=layer
-externalgraphiq feature elem=lonlat
-externalgraphiq feature elem=data
-externalgraphiq feature elem=id
-externalgraphiq feature elem=geometry
-externalgraphiq feature elem=state
-externalgraphiq feature elem=attributes
-externalgraphiq feature elem=style
-externalgraphiq feature elem=cluster
-externalgraphiq feature elem=renderIntent
-externalgraphiq feature elem=fid
-externalgraphiq feature elem=bounds
-externalgraphiq feature elem=url
-externalgraphiq feature elem=modified
-externalgraphiq feature elem=initialize
-externalgraphiq feature elem=destroy
-externalgraphiq feature elem=clone
-externalgraphiq feature elem=onScreen
-externalgraphiq feature elem=getVisibility
-externalgraphiq feature elem=createMarker
-externalgraphiq feature elem=destroyMarker
-externalgraphiq feature elem=createPopup
-externalgraphiq feature elem=atPoint
-externalgraphiq feature elem=destroyPopup
-externalgraphiq feature elem=move
-externalgraphiq feature elem=toState
-externalgraphiq feature elem=CLASS_NAME
-externalgraphiq feature elem=marker
-externalgraphiq feature elem=popupClass
-externalgraphiq feature elem=popup	
-	*/
+	graphicWidth: "${graphicWidth}"	
 },
 {
 	context: {
 		externalGraphic:  function(feature) {
 			zoom=map.getZoom();
-			console.log("img zoom="+zoom+" zoom_nb="+zoom_nb);
+			// debug console.log("img zoom="+zoom+" zoom_nb="+zoom_nb);
 			if (feature.attributes.count==1 &&zoom>=zoom_nb) {
 			for (elem in feature.attributes)
-				console.log("externalgraphiq attrib elem="+elem);
+				// debug console.log("externalgraphiq attrib elem="+elem);
 			//for (elem in feature) console.log("externalgraphiq feature elem="+elem);
-			console.log("externalgraphiq attributes ="+feature.attributes);
-			console.log("externalgraphiq layer ="+feature.layer);
-			console.log("externalgraphiq lonlat ="+feature.lonlat);
-			console.log("externalgraphiq data ="+feature.data);
-			console.log("externalgraphiq geometry ="+feature.geometry);
+			//console.log("externalgraphiq attributes ="+feature.attributes);
+			//// debug console.log("externalgraphiq layer ="+feature.layer);
+			//// debug console.log("externalgraphiq lonlat ="+feature.lonlat);
+			//// debug console.log("externalgraphiq data ="+feature.data);
+			//// debug console.log("externalgraphiq geometry ="+feature.geometry);
 
 			img=icone(feature,0);
 			//if (zoom>zoom_icone_plus && img=="img/wifi_bleu.png") {img="img/wifi_bleu_48.png";}
@@ -258,33 +351,24 @@ externalgraphiq feature elem=popup
 		graphicWidth: function(feature) {
 			zoom=map.getZoom();
 			//echelle=map.getScale()
-			console.log("Dimension graphique zoom="+zoom+" zoom_icone_plus="+zoom_icone_plus);
+			//console.log("Dimension graphique zoom="+zoom+" zoom_icone_plus="+zoom_icone_plus);
 			if (zoom>zoom_icone_plus) {return 48;}
 			else {return 24;} 
 		},
 		graphicXOffset: function(feature) {
-			/*zoom=map.getZoom();
-			console.log("x zoom="+zoom);
-			if (zoom>zoom_icone_plus) {return 7.0;}
-			else {return 0.0;} */
 		var XOffset = 7;
 		var YOffset = -20;
 		var Resolution = map.getResolution();
 			XOffset= XOffset * Resolution / map.getResolution();
-			console.log("y zoom="+zoom+" XOffset="+XOffset);
+			// debug console.log("y zoom="+zoom+" XOffset="+XOffset);
             return XOffset
 		},
 		graphicYOffset: function(feature) {
-			/*zoom=map.getZoom();
-			console.log("y zoom="+zoom);
-			if (!zoom) {zoom=1;}
-			if (zoom>zoom_icone_plus) {return -20.0;}
-			else {return 0.0;} */
 			var XOffset = 7;
 			var YOffset = -20;
 			var Resolution = map.getResolution();
 			YOffset= YOffset * Resolution / map.getResolution();
-			console.log("y zoom="+zoom+" YOffset="+YOffset);
+			// debug console.log("y zoom="+zoom+" YOffset="+YOffset);
             return YOffset
 		},
 		fillOpacity:  function(feature) {
@@ -332,96 +416,6 @@ externalgraphiq feature elem=popup
 	}
 });
 
-/*
-
-69	        new OpenLayers.Rule({
-70	            title: "All",
-71	            minScaleDenominator: 3000000,
-72	            symbolizer: {
-73	                graphicName: "star",
-74	                pointRadius: 5,
-75	                fillColor: "#99ccff",
-76	                strokeColor: "#666666",
-77	                strokeWidth: 1
-78	            }
-79	        })
-80	    ];
-
-new OpenLayers.Rule({
-    filter: new OpenLayers.Filter.Logical({
-        filters: [
-        type: OpenLayers.Filter.Comparison.GREATER_THAN,
-        property: "count",
-        value: 50
-
-		new OpenLayers.Filter.Comparison({
-                type: OpenLayers.Filter.Comparison.LESS_THAN_OR_EQUAL_TO,
-                property: "zoom",
-                value: map.zoom
-            })
-        ],
-        type: OpenLayers.Filter.Logical.AND
-    }),
-    symbolizer: {
-        externalGraphic: "/path/to/images/1.png",
-        graphicHeight: 25,
-        graphicWidth: 25,
-        graphicOpacity: 1.0
-    }
-}));
-
-new OpenLayers.Rule({
-    filter: new OpenLayers.Filter.Logical({
-        filters: [
-            new OpenLayers.Filter.Comparison({
-                type: OpenLayers.Filter.Comparison.EQUAL_TO,
-                property: "type",
-                value: "type_1"
-            }),
-            new OpenLayers.Filter.Comparison({
-                type: OpenLayers.Filter.Comparison.LESS_THAN_OR_EQUAL_TO,
-                property: "zoom",
-                value: map.zoom
-            })
-        ],
-        type: OpenLayers.Filter.Logical.AND
-    }),
-    symbolizer: {
-        externalGraphic: "/path/to/images/1.png",
-        graphicHeight: 25,
-        graphicWidth: 25,
-        graphicOpacity: 1.0
-    }
-}));
-
-        type: OpenLayers.Filter.Comparison.BETWEEN,
-        property: "count",
-        lowerBoundary: 2,
-        upperBoundary: 14
-    }),
-        type: OpenLayers.Filter.Comparison.GREATER_THAN,
-        property: "count",
-        value: 50
-    }),
-    	
-var rule = new OpenLayers.Rule({
-  filter: new OpenLayers.Filter.Comparison({
-    type: '==',
-    property: 'baz.dolor', // this does not work! 
-    value: 'sit'
-  }),
-  symbolizer: {
-    graphic: true,
-    graphicZIndex: 100,
-    backgroundGraphicZIndex: 500,
-    externalGraphic: OpenLayers.Util.getImagesLocation() + 'foo.png',
-    graphicHeight: 22,
-    graphicWidth: 22,
-    graphicTitle: '${display_name}',
-    strokeColor: '#FF0000'
-  }
-});
-*/
 
 var styleMap_wifi_couche = new OpenLayers.StyleMap({
 	"default": style_wifi_couche,
@@ -442,15 +436,6 @@ var selectedfeature,
 		
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	
-/*	========================================
- Exemples, outils dynamiques OSM
- https://github.com/neogeomat/webdri/blob/master/index.php
- http://gis.stackexchange.com/questions/53850/how-to-change-color-of-feature-to-mark-it-as-recently-modified-with-openlayers
- evt http://openlayers.org/dev/examples/dynamic-text-layer.html
-    ========================================*/
-
-
-	
 function getAttrib(variable,cle) {
 	if (variable.hasOwnProperty(cle)) {
 		valeur=variable[cle];
@@ -462,9 +447,9 @@ function getAttrib(variable,cle) {
 }
 	
 function onLoadEnd  () {
-    console.log("Points Wifi, Téléchargement terminé");
-	InfoDemarre.deactivate();
-	InfoDemarre.destroy();
+    // debug console.log("Points Wifi, Download complete");
+	InfoLoadingPanel.deactivate();
+	InfoLoadingPanel.destroy();
 }	
 
 function featureHighlighted(evt) {
@@ -477,7 +462,7 @@ function featureHighlighted(evt) {
 		name=getAttrib(feature.cluster[0].attributes,"name");
 		texte=name;
 		}
-	console.log("highlight texte="+texte);
+	// debug console.log("highlight texte="+texte);
     hover = new OpenLayers.Popup.FramedCloud("Popup",
         new OpenLayers.LonLat(5.6, 50.6),
         null,
@@ -491,7 +476,7 @@ function featureunhighlighted(evt) {
 	hover.hide();
 }
 
-// Nécessaire pour interaction seulement, et non pas pour affichage.
+// Usefull for interaction - not to visualize data
 function onPopupClose(evt) {
 	// 'this' is the popup.
 	var feature = this.feature;
@@ -525,17 +510,13 @@ function onFeatureSelect(event) {
 	}
 	nb_objets=feature.cluster.length
 	if (nb_objets>1) {
-		texte = "<div>"+nb_objets+" Points Wifi - Zoomez davantage pour localiser ces Points Wifi.</div><div class=\"lieu\">";
-		titre = +nb_objets+" Points Wifi - Zoomez davantage pour localiser ces Points Wifi.";
+		texte = "<div>"+nb_objets+ msg_wifi_point+"</div><div class=\"lieu\">";
+		titre = +nb_objets+" msg_wifi_point";
 	}
-	else {texte="";titre="Points Wifi";}
-	
+	else {texte="";titre=points_wifi;}
 	for (var nb = 0; nb < nb_objets; nb++) {
 	
-		//for (var item in feature.cluster[nb].style) {console.log(item+ " "+feature.cluster[nb].style.item);}
 		img=icone(feature,nb);
-		//console.log("==> " +wifi_operator+' img='+img)		
-		//console.log("gr "+feature.cluster[nb].style.externalGraphic);
 		name=getAttrib(feature.cluster[nb].attributes,"name");
 		highway=getAttrib(feature.cluster[nb].attributes,"highway");
 		operator=getAttrib(feature.cluster[nb].attributes,"operator");
@@ -558,57 +539,62 @@ function onFeatureSelect(event) {
 			if (operator!="") {
 				name=operator;
 			}
-			else {name="Lieu non identifié";}
+			else {name="<?php echo $i18n["lieu-non-identifie"];?>
+";}
 		}
 
-		if (amenity!="") {
-			if (amenity.toLowerCase()=="library") {amenity="Bibliothèque";}
-			else if (amenity.toLowerCase()=="townhall") {amenity="Hotel de ville";}
-			else if (amenity.toLowerCase()=="community_centre") {amenity="Centre communautaire";}
-			else if (amenity.toLowerCase()=="social_centre") {amenity="Centre de services sociaux";}
-			else if (amenity.toLowerCase()=="cafe") {amenity="Café";}
-			else if (amenity.toLowerCase()=="place_of_worship") {amenity="Lieux de culte";}
-			else if (amenity.toLowerCase()=="hospital") {amenity="Hopital";}
-			else if (amenity.toLowerCase()=="pharmacy") {amenity="Pharmacie";}
-			else if (amenity.toLowerCase()=="clinic") {amenity="Clinique médicale";}
-			else if (amenity.toLowerCase()=="doctors") {amenity="Médecins";}
-			else if (amenity.toLowerCase()=="post_office") {amenity="Poste";}
-			else if (amenity.toLowerCase()=="marina") {amenity="Marina";}
-			else if (amenity.toLowerCase()=="fast_food") {amenity="Resto Rapide";}
-			else if (amenity.toLowerCase()=="ice_cream") {amenity="Crème Glacée";}
+		if (lang=="fr")
+		{
+			if (amenity!="") {
+				if (amenity.toLowerCase()=="library") {amenity="Bibliothèque";}
+				else if (amenity.toLowerCase()=="townhall") {amenity="Hotel de ville";}
+				else if (amenity.toLowerCase()=="community_centre") {amenity="Centre communautaire";}
+				else if (amenity.toLowerCase()=="social_centre") {amenity="Centre de services sociaux";}
+				else if (amenity.toLowerCase()=="cafe") {amenity="Café";}
+				else if (amenity.toLowerCase()=="place_of_worship") {amenity="Lieux de culte";}
+				else if (amenity.toLowerCase()=="hospital") {amenity="Hopital";}
+				else if (amenity.toLowerCase()=="pharmacy") {amenity="Pharmacie";}
+				else if (amenity.toLowerCase()=="clinic") {amenity="Clinique médicale";}
+				else if (amenity.toLowerCase()=="doctors") {amenity="Médecins";}
+				else if (amenity.toLowerCase()=="post_office") {amenity="Poste";}
+				else if (amenity.toLowerCase()=="marina") {amenity="Marina";}
+				else if (amenity.toLowerCase()=="fast_food") {amenity="Resto Rapide";}
+				else if (amenity.toLowerCase()=="ice_cream") {amenity="Crème Glacée";}
+				}
+			if (shop!="") {
+				if (shop.toLowerCase()=="supermarket") {shop="Supermarché";}
+				else if (shop.toLowerCase()=="mall") {shop="Centre commercial";}
+				else if (shop.toLowerCase()=="department_store") {shop="Magasin";}
+				else if (shop.toLowerCase()=="clothes") {shop="Vêtements";}
+				else if (shop.toLowerCase()=="stationery") {shop="Articles de bureau";}
+				else if (shop.toLowerCase()=="bakery") {shop="Boulangerie";}
 			}
-		if (shop!="") {
-			if (shop.toLowerCase()=="supermarket") {shop="Supermarché";}
-			else if (shop.toLowerCase()=="mall") {shop="Centre commercial";}
-			else if (shop.toLowerCase()=="department_store") {shop="Magasin";}
-			else if (shop.toLowerCase()=="clothes") {shop="Vêtements";}
-			else if (shop.toLowerCase()=="stationery") {shop="Articles de bureau";}
-			else if (shop.toLowerCase()=="bakery") {shop="Boulangerie";}
-		}
-		if (leisure!="") {
-			if (leisure.toLowerCase()=="park") {leisure="Parc";}
-			else if (leisure.toLowerCase()=="sports_centre") {leisure="Centre sportif";}
-			else if (leisure.toLowerCase()=="marina") {leisure="Marina";}
-			else if (leisure.toLowerCase()=="cinema") {leisure="Cinéma";}
-		}
-		if (tourism!="") {
-			if (tourism.toLowerCase()=="camp_site") {tourism="Camping";}
-			else if (tourism.toLowerCase()=="hotel") {tourism="Hotel";}
-			else if (tourism.toLowerCase()=="hostel") {tourism="Auberge";}
-			else if (tourism.toLowerCase()=="guest_house") {tourism="Chambre d'hôte";}
-		}
-		if (highway!="") {
-			if (highway.toLowerCase()=="rest_area") {highway="Halte routière";}
-		}
-		if (building!="") {
-			if (building.toLowerCase()=="hospital") {building="Hopital";}
-			else if (building.toLowerCase()=="school") {building="École";}
-			else if (building.toLowerCase()=="public_building") {amenity="Immeuble public";}
-		}
+			if (leisure!="") {
+				if (leisure.toLowerCase()=="park") {leisure="Parc";}
+				else if (leisure.toLowerCase()=="sports_centre") {leisure="Centre sportif";}
+				else if (leisure.toLowerCase()=="marina") {leisure="Marina";}
+				else if (leisure.toLowerCase()=="cinema") {leisure="Cinéma";}
+			}
+			if (tourism!="") {
+				if (tourism.toLowerCase()=="camp_site") {tourism="Camping";}
+				else if (tourism.toLowerCase()=="hotel") {tourism="Hotel";}
+				else if (tourism.toLowerCase()=="hostel") {tourism="Auberge";}
+				else if (tourism.toLowerCase()=="guest_house") {tourism="Chambre d'hôte";}
+			}
+			if (highway!="") {
+				if (highway.toLowerCase()=="rest_area") {highway="Halte routière";}
+			}
+			if (building!="") {
+				if (building.toLowerCase()=="hospital") {building="Hopital";}
+				else if (building.toLowerCase()=="school") {building="École";}
+				else if (building.toLowerCase()=="public_building") {amenity="Immeuble public";}
+			}
 
-		if (cuisine!="") {
-			// trad
-		}
+			if (cuisine!="") {
+				// trad
+			}
+		}	
+		
 		if (tel!="") {
 			if (tel.indexOf("+")<0) {tel="+"+tel;}
 
@@ -657,10 +643,9 @@ function onFeatureSelect(event) {
 	}
 		// console.log("texte "+texte);
 	}
-	
 	if (nb_objets>1) {
 		texte +="</div>\n";
-		titre = nb_objets+" Points Wifi - Zoomez davantage pour localiser ces Points Wifi.";
+		titre = nb_objets+msg_wifi_point;
 	}
 	// console.log("texte "+texte);
 	
@@ -679,24 +664,23 @@ function onFeatureSelect(event) {
 	
 }
 
-function couche_wifi (couche,desc,url_couche,affichage) {
-	// url - Service Overpass, requête dynamique, base OSM
-    var url_wifi_couche = url;
-	console.log("fonction couche_wifi desc="+desc+", url_couche="+url_couche);
+function wifi_layer_request_hotspots (couche,desc,url_couche,affichage) {
+	// url - Overpass-API Service, dynamic query to base OSM
+	// debug console.log("fonction wifi_layer_request_hotspots desc="+desc+", url_couche="+url_couche);
     couche = new OpenLayers.Layer.Vector(desc, {
-
 	strategies: [new OpenLayers.Strategy.Fixed(), new OpenLayers.Strategy.Cluster() /*,new OpenLayers.Strategy.BBOX({resFactor: 1.1})*/ ],
         styleMap: styleMap_wifi_couche,
         protocol: new OpenLayers.Protocol.HTTP({
-            url: url_couche,  // url_region["bbox"],   //<-- url absolu ou relatif fichier .osm
+            url: url_couche,
             format: new OpenLayers.Format.OSMMeta()
         }),
-		forceFixedZoomLevel: true, numZoomLevels: null, restrictedMinZoom: 10, MinZoom: 10, MaxZoom: 10,
+		forceFixedZoomLevel: true, numZoomLevels: null, MinZoom: 10, MaxZoom: 17,
         projection: new OpenLayers.Projection("EPSG:4326")
     });
+
 	couche.visibility= true;
     map.addLayer(couche);
-	console.log("fonction couche_wifi - couche wifi ajoutée");
+	// debug console.log("fonction wifi_layer_request_hotspots - couche wifi ajoutée");
     //controls      
     selector = new OpenLayers.Control.SelectFeature(couche);
     map.addControl(selector);
@@ -719,102 +703,147 @@ function couche_wifi (couche,desc,url_couche,affichage) {
 		});
 
 }
+  
+function req_localiser () {
+// Recenter on user position
+navigator.geolocation.getCurrentPosition(function(position) {       
+    //   document.getElementById('info').innerHTML
+       //     = " Latitude: " + 
+       //         position.coords.latitude + 
+       //       " Longitude: " +
+       //         position.coords.longitude;
 
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        lat=position.coords.latitude;
+        lon=position.coords.longitude;
+		if (zoom<10) {zoom=zoom+10;}
+		if (zoom<12) {zoom=12;}
+		if (zoom>17) {zoom=17;}
+        console.log("Geoloc Latitude: " + 
+                position.coords.latitude + 
+              " Longitude: " +
+                position.coords.longitude);
+        lonLat = new OpenLayers.LonLat(position.coords.longitude,
+        position.coords.latitude)
+        .transform(
+            new OpenLayers.Projection("EPSG:4326"), //transform from WGS 1984
+            map.getProjectionObject() //to Spherical Mercator Projection
+            );
+	//	map.setCenter(lonLat, zoom);	 
 
+		var loc_feature = new OpenLayers.Feature.Vector(
+				new OpenLayers.Geometry.Point( lon, lat  ).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject()),
+				{description:"<?php echo $i18n['my_location'];?>"} ,
+				{externalGraphic: '../ol2/img/marker.png', graphicHeight: 25, graphicWidth: 21, graphicXOffset:-12, graphicYOffset:-25  }
+			);    
+		
+		selection_wifi_lonlat(lon=lon,lat=lat,zoom=zoom);
+		POI = new OpenLayers.Layer.Vector("Loc.");
+		POI.addFeatures(loc_feature);	
+		map.addLayer(POI);
+	
+	});
+}
+	
+function init_map(){
 
-function init_carte(){
+	
     var options = {
 		projection: new OpenLayers.Projection("EPSG:900913"),
 		displayProjection: new OpenLayers.Projection("EPSG:4326"),
+		numZoomLevels: 20,
 		controls: [
 				new OpenLayers.Control.Navigation(),
-				new OpenLayers.Control.KeyboardDefaults(),
-				new OpenLayers.Control.PanZoomBar({forceFixedZoomLevel: true, zoomWorldIcon: false}),
-				new OpenLayers.Control.TouchNavigation({
-					dragPanOptions: {
-						enableKinetic: true
-					}
-				}),
+				new OpenLayers.Control.ZoomPanel(),
+				new OpenLayers.Control.ZoomIn(),
+				new OpenLayers.Control.ZoomOut(),
 				new OpenLayers.Control.ScaleLine(),
-				new OpenLayers.Control.MousePosition(),
 				new OpenLayers.Control.KeyboardDefaults(),
-				new OpenLayers.Control.LayerSwitcher(), 
 				new OpenLayers.Control.Attribution({
 				div: document.getElementById('map_attribution') }),
 				new OpenLayers.Control.Scale()
 		]
 	};
 	
-	OpenLayers.Lang.setCode("fr");
+	OpenLayers.Lang.setCode("<?php echo $lang;?>");
 	OpenLayers.ProxyHost = "proxy-overpass.php?url=";
 
-	map = new OpenLayers.Map("map",options);	  
+	map = new OpenLayers.Map({
+		div:"map",
+		projection: new OpenLayers.Projection("EPSG:900913"),
+		displayProjection: new OpenLayers.Projection("EPSG:4326"),
+		numZoomLevels: 20,
+		controls: [
+				new OpenLayers.Control.Navigation(),
+				new OpenLayers.Control.ZoomIn(),
+				new OpenLayers.Control.ZoomOut(),
+				new OpenLayers.Control.ScaleLine(),
+				new OpenLayers.Control.KeyboardDefaults(),
+				new OpenLayers.Control.Attribution({
+				div: document.getElementById('map_attribution') }),
+				new OpenLayers.Control.Scale()
+		]
+	}	);	  
 	map.numZoomLevels = null;
-
-	// calque de base
     layerMapnik = new OpenLayers.Layer.OSM.Mapnik("OpenStreetMap",
-		{attribution: "&copy; contributeurs <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a>",
+		{attribution: "<?php echo $i18n["osm-attribution"];?>",
 	zoomOffset:10,
 	minZoomLevel: 10,
 	resolutions: [152.87405654907226, 76.4370282714844,38.2185141357422,19.1092570678711,9.55462853393555,4.77731426696777,2.38865713348389,1.19432856674194]
-	});file:///C:/Users/Pierre/Downloads/Montreal%20Wi-Fi%20_09_12_11.csv
+	});
     map.addLayer(layerMapnik);
-	InfoDemarre=new OpenLayers.Control.LoadingPanel();
-	map.addControl(InfoDemarre); 
-/*
-    var lonLat = new OpenLayers.LonLat(lon, lat)
-        .transform(new OpenLayers.Projection("EPSG:4326"), new OpenLayers.Projection("EPSG:900913"));
+	InfoLoadingPanel=new OpenLayers.Control.LoadingPanel();
+	map.addControl(InfoLoadingPanel); 
+	// gold();
+	
+	map.addLayer(markers);
+	var lonLat;
 
-    map.setCenter (lonLat, zoom);
-            // Variant 2: Zoom to show all            
-            //map.zoomToMaxExtent();
+	// Minimize server request - minimum zoom at 12 
+	if (zoom<12) {zoom=12;}
+	selection_wifi_lonlat(lon=lon,lat=lat,zoom=zoom);					
 
-            // Variant 3: Using a bounding box: Most but not all of the world
-            //map.zoomToExtent(
-            //    new OpenLayers.Bounds(-150.0,68.0,150.0,-50.0).transform(
-            //        map.displayProjection,  
-            //        map.projection));	document.getElementById('message'.innerHTML="Points Wifi : Chargement des données ...");
-    var bounds = new OpenLayers.Bounds();
-	bounds=map.getExtent();
-	// https://github.com/digitalfotografen/Openlayers---Sparklines/blob/master/examples/sweden.html
-	var WGS84 = new OpenLayers.Projection("EPSG:4326");
-	bounds.transform(map.getProjectionObject(), WGS84);
-	console.log("bounds "+bounds+", bbox="+bounds.toBBOX());
-    //bounds.toBBOX(); // returns 4,5,5,6
-	//       maxExtent: new OpenLayers.Bounds(-20037508, -20037508, 20037508, 20037508.34)
-    //bounds.left, .bottom, .right, .top
-// qc 61549
-	console.log("ajout couche montreal "+url_region["montreal"]);
-
-	couche_wifi (couche=wifi_region,
-		desc="Points Wifi", url=url_region["quebec"], affichage=true);
-	console.log("couche_wifi ajoutée");
-*/
-	// départ - selection wifi pour sherbrooke
-	//selection_wifi_lonlat(lon=-72.1527,lat=45.3965,zoom=10);
-	// départ - selection wifi pour quebec
-	selection_wifi_lonlat(lon=-71.1598,lat=46.8226,zoom=10);
-
-// suivre événements http://dev.openlayers.org/releases/OpenLayers-2.13.1/examples/events.html
 	function handleZoom(event) {
 		var map = event.object;
 		resolution=map.getResolution();
 		echelle=map.getScale();
 		minzoom=map.getMinZoom();
-		console.log("movestart zoom="+map.getZoom()+" resolution="+resolution+" echelle="+echelle+" minzoom="+minzoom)
+		// debug console.log("movestart zoom="+map.getZoom()+" resolution="+resolution+" echelle="+echelle+" minzoom="+minzoom)
 		if (map.getZoom() < 11) {
 			OpenLayers.Event.stop(event);
 	 }
 	}
+	
+	var updateUrlHash = function () {
+		//this is bound to the map, so:
+		//var zoom = this.getZoom();
+		var zoom = map.getZoom();
+		zoom=zoom+10;
+		//zoomChanged();
+		// debug console.log("upU zoom", zoom);
+		var lonLat = this.getCenter().transform("EPSG:900913", "EPSG:4326")
+		var lat=lonLat.lat.toFixed(6);
+		var lon=lonLat.lon.toFixed(6);
+		window.location.hash = zoom + '/' + lat + '/' + lon;
+	}
+
+	var zoomChanged = function ()
+	{
+	  var zoom = map.getZoom();
+	  // debug console.log("zoomChanged", zoom);
+	}
+	
+	//register the moveend event on the map (also catches zoomend)
+	map.events.register('moveend', map, updateUrlHash);
+	map.events.register("zoomend", map, zoomChanged);
+	
 	map.events.register('movestart', map, handleZoom)
 
-    }
+    }  // fin init_map
 
 
 	// ************ NOMINATIM change your country code for language localisation
 	//  var lang="ar" , "en" or "fr" modified by html language selection button;
-       var lang="fr";
+       var lang="<?php echo $lang;?>";
 	
 	
    
@@ -823,19 +852,6 @@ function init_carte(){
 	  source of functions http://wiki.openstreetmap.org/wiki/User:SunCobalt/OpenLayers_Suche
 	  ========================================================================
 	*/
-	
-    function jumptolonlat(lon,lat){
-	/* lieu sélectionné via recherche Nominatim
-	   - déplace carte au lieu sélectionné, zoom=11 (pourra éventuellement varier)
-	   - charge données wifi via Overpass
-	*/
-		var LonLat = new OpenLayers.LonLat(lon,lat).transform(new OpenLayers.Projection("EPSG:4326"),map.getProjectionObject());
-		//map.setCenter(LonLat,11); 
-		document.getElementById("result").className="cacher";
-		selection_wifi_lonlat(lon,lat,11);
-		console.log("jumptolonlat terminé");
-       return false;
-      }
 	  
     function fragmapquest(){
 
@@ -846,17 +862,26 @@ function init_carte(){
 	   search_query=document.getElementById("nominatim_query").value;
 	   exclude_place_ids="state,region,administrative";
        url=urlmapquest+"?q="+search_query+"&limit=8"+"&lang="+lang;
-	   console.log("Nominatim, url="+url);
+	   // debug console.log("Nominatim, url="+url);
        var http = new XMLHttpRequest();
        http.open("GET",url,false);    
        http.send(null);
        nominatim_line=http.responseText.split("\n");
        resultdiv = document.getElementById("result");
 	   resultdiv.className="displayblock";
-	   i18n_info_enter_locality_above="Spécifiez une localité ci-dessus, et appuyez sur le bouton Rechercher.";
-	   i18n_info_no_search_results_for="Aucun résultat pour";
-	   i18n_info_search_results_for="Résultats de recherche pour";
-	   result_close="<a id='result_close' class='right_panel' href='#' onclick=\"document.getElementById('result').className='cacher';\" title='Fermer le panneau des Résultats'><button class='btn small'><img src='img/close.png' class='right_panel' /></button></a><br />";
+	   if (lang=="fr")
+	   {
+		   i18n_info_enter_locality_above="Spécifiez une localité ci-dessus, et appuyez sur le bouton Rechercher.";
+		   i18n_info_no_search_results_for="Aucun résultat pour";
+		   i18n_info_search_results_for="Résultats de recherche pour";
+	   }
+	   else
+	   {
+		   i18n_info_enter_locality_above="Spécify a locality above and click on the Search button.";
+		   i18n_info_no_search_results_for="No result for ";
+		   i18n_info_search_results_for="Search results for ";
+	   }
+	   result_close="<a id='result_close' class='right_panel' href='#' onclick=\"document.getElementById('result').className='hidden';\" title='Fermer le panneau des Résultats'><button class='btn small'><img src='img/close.png' class='right_panel' /></button></a><br />";
 	   resultdiv.innerHTML=result_close+resultdiv.innerHTML;		 
 	   
 	   if (search_query.length==0) {
@@ -892,24 +917,33 @@ function init_carte(){
        } 
 	   
 	/*========================================================================
-	  NOMINATIM SEARCH functions end
+	    NOMINATIM SEARCH functions end
 	  ========================================================================*/
 
-	
 //]]>	  
 </script>
+<link rel="stylesheet" href="../ol2/theme/default/style.css" type="text/css">
 <style type="text/css">
 
-  /*  Style général */
-
+	html, body {
+	width:100%; height: 100%;
+	}
 	body {
-		 margin:auto;
-		 max-width:1024px;
-		 border: 2px solid navy;
-	 }
-	#wifi {
-		 clear:both;
-	 }
+        margin: 0.1em;
+        padding: 0;
+		font-family: Verdana,Arial,Helvetica,sans-serif;
+		font-size:<?php echo $wordsize;?>;
+  }
+	header {width:100%; height:6%;  line-height:5%;padding-top:0.6%;
+		  font-family:"Comic Sans MS",  Times, serif; color:beige;
+		background-color: #202080;
+	  }
+	#sect2 {float:left;margin-righ:2em; line-height:100%; color:white; font-size: 1em; padding-left:0.5em; clear:right;}
+	div.olPopupCloseBox
+	{
+	  background-image: url("img/close.png");
+	  background-color: rgba(255, 0, 255, 0.4);
+	}
 	 .l25{
         width : 24.9%;
 	 }
@@ -923,50 +957,70 @@ function init_carte(){
  .l100{
 	width:99%;
  }
- .cacher{
+ .hidden{
  	display:none;
  }
- #section_gauche {
-		margin-top:2em;
-		float: left;
+ #section_info {
 		font-size:85%;
-    }
-    #section_droite, #menu_region {
+	position:absolute; left:+5%; top:+15%; width:55%;
+	z-index:2;
+  }
+    #section_principale {
 		float: right;
 		clear: right;
+		z-index:0;
     }
-    #menu_region {
-		margin-right:2em;
-    }
+	#map {
+		width:100%;height:90%;  
+		clear:both; overflow:hidden;
+		background-color:#3F99AA;
+	}	
 	#legende {
         width : 40%;
 		float: left;
 		background-color:#EEEAEE;
 	}
 	#legende img {
-		/* margin:0.7em; float : left; */
 		height:22px;
 	}
 	#naviguer {
-	/*
-		float: right;
-         max-width : 56%;
-		 */
-		margin-top:3em;
-		margin-right:0.5em;
 		clear:right;
 	}
-	#bouton_contribuez {
-		margin:2.5em 1em 1em;
-	}
-	#baspage {
-		 clear:both;padding-top:1em;
-		 border-top: 2px solid navy;
-		 margin:0.2em;
-		 padding-top:0.2em;
-		 background:#ddd;
-		 text-align:center;
-	 }
+	a.blanc
+	  { height:100%; color:#eaeade; text-decoration:none; font-size:0.8em;
+	  }
+    footer {
+		bottom: 0;
+		width:100%; height: 5%;
+		background-color: #202080;
+		color:white;
+        font-family: Verdana;
+		font-size: 95%;
+		display: block;
+      }	 
+	#credit
+	  {float:left;width:16%; color:white;
+		  text-align:left; padding-left:1.2em;
+		  display: block;
+		  margin:0.3em;
+		  font-size:1em;
+	  }
+	#options {
+		float: right;
+		margin-right:8%;
+    }
+	#map_attribution {
+		float: right;
+		margin-right:3%;
+		padding-left:2em;padding-right:2em;
+		color:#daeade;
+    }
+	.ico {width:1.4em;}
+	 #section_info {
+			font-size:95%;
+		position:absolute; left:+5%; top:+15%; width:65%;
+		z-index:2;
+	  }
 	.logos {
 		text-align:center;height:60px;
 	}
@@ -978,26 +1032,40 @@ function init_carte(){
     }	.bleu {
 		color:navy; font-size:1.1em;
 	}
+	.infos {color:navy;background:white;font-size:80%;}
 	hr.popup {
 		color:#0099CC;
 		background-color:#0099CC;
 	}
-	h1 {
-		font-size:1.2em;text-align:center;color:purple;
+	#sect2 h1 {
+		font-size:1.2em;text-align:center;color:white;
 		line-height:1.3em;margin:0;padding:0;
+		display:inline;
 	}
 	#search_panel form h1 {
 		display:inline;color:white;
 		font-family: cursive, fantasy, verdana;
-		font-style:italic;font-size:1.25em;margin:0.2em;
-		}
-	#search_panel form img {
-		display:inline;
+		font-style:italic;font-size:1.15em;margin:0.2em;
 		}
 	#contribuez {
-		margin: 0.4 em;
-		padding 0.4 em;
+		margin: 0.4em ;
+		padding-top 2em;
 	}
+	#naviguer h1, #contribuez  h1 {
+		text-align:left
+		font-size:1.2em;color:purple;
+		line-height:1.3em;margin:0;padding:0;
+	}
+	#localiser
+	  { float:left;line-height:100%;
+		margin-right:4em;
+	  }
+	a#localiser
+	  { height:100%; color:#ffdade; text-decoration:none; font-size:0.9em;
+	  }
+	a#localiser:hover
+	  { color:#dadeff;
+	  }
 	h2 {
 		font-size:1.2em;
 	}
@@ -1022,50 +1090,129 @@ function init_carte(){
 	h4.popup {
 		background-color:#DADEDE;
 	}
-	.dimcarte {
-		 width:100%;height:600px;
-	}
 	.gras {font-weight:bold;}
 	.centre {text-align:center;}
 
-	.cadre
-	{
-	 border: 1px solid #888;
-	 padding: 0.5em;
-	  background-color: #ffffcc;
-	 font-size: 10pt;
-	 box-shadow: inset 2px 2px 2px 2px #888;
-	 border-top-left-radius: 8px;
-	 border-top-right-radius: 8px;
-	 border-bottom-right-radius: 8px;
-	 border-bottom-left-radius: 8px;
+.olControlLoadingPanel {
+	background-image:url(img/loading.gif);
+	position: relative;
+	width: 110%;
+	height:110%;
+	background-position:center;
+	background-repeat:no-repeat;
+	display: none; 
+}
+.olControlAttribution
+{
+  font-size: .8em;
+  right: 0;
+  bottom: 0;
+  padding: 0.3em 2em 0.3em 2em;
+  background-color: rgba(17, 51, 51, 0.8);
+}
+select#lang {color:#99aa99;}
+div#credit a, div#map_attribution a
+	  { height:100%; color:#bbcccc; text-decoration:none;
+	  }
+div#credit a:hover, div#credit a:focus, div#map_attribution a:hover, div#map_attribution a:focus
+	  { color:white;
+	  }	  	
+#sect1 {
+	float:left;
+	margin-left:35%;
+	line-height:100%;
 	}
+#search_panel {
+	float : left; 
+	position:relative;
+/*	width:65%;
+	height:1.7em; */
+	text-align:left;
+	font-size:85%;
+  }
+#search_panel img, #search_panel form, #search_panel fieldset {
+	display:inline;
+  }
+#result {
+	border: 2px #039 solid;
+	background-color:#fff8c6;
+	color:#039;
+	padding-bottom:0.3em;
+  }
+$('.bloc_contribuez').click(afficher_contribuez());
+/*$('.bloc_contribuez').click(function(){
+	document.getElementById("contribuez").className="l100";
+});*/
+ .btnsearch{
+  background:#fef url(img/search.jpg) no-repeat left top;margin-left:0.2em;padding:0.3em;text-decoration:none;
+}
+.arrondi {
+    width: 120px;
+    height: 50px;
+    border: 2px solid #000;
+    -webkit-border-radius: 12px / 24px;
+    -moz-border-radius:    12px / 24px; 
+    border-radius:         12px / 24px; 
+}
+.cercle {
+    width: 120px;
+    height:160px;
+	font-size:140%;
+    border: 2px solid #000;
+    -webkit-border-radius: 50px / 80px;
+    -moz-border-radius:    10px / 80px; 
+    border-radius:         100px / 80px; 
+}
+.ovale {
+    width: 200px;
+    height: 320px;
+    background: #9a4;
+    -webkit-border-radius: 100px / 160px;
+    -moz-border-radius:    100px / 160px; 
+    border-radius:         100px / 160px; 
+}
 
-	.olControlLoadingPanel {
-		background-image:url(img/loading.gif);
-		position: relative;
-		width: 110%;
-		height:110%;
-		background-position:center;
-		background-repeat:no-repeat;
-		display: none; 
-	}
-	
-/*  Style pour petits écrans */
+.btn.error{background-color:#c43c35;background-repeat:repeat-x;background-image:-moz-linear-gradient(top, #ee5f5b, #c43c35);background-image:-ms-linear-gradient(top, #ee5f5b, #c43c35);background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%, #ee5f5b), color-stop(100%, #c43c35));background-image:-webkit-linear-gradient(top, #ee5f5b, #c43c35);background-image:-o-linear-gradient(top, #ee5f5b, #c43c35);background-image:linear-gradient(top, #ee5f5b, #c43c35);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ee5f5b', endColorstr='#c43c35', GradientType=0);text-shadow:0 -1px 0 rgba(0, 0, 0, 0.25);border-color:#c43c35 #c43c35 #882a25;border-color:rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);}
+.btn.success{background-color:#57a957;background-repeat:repeat-x;background-image:-khtml-gradient(linear, left top, left bottom, from(#62c462), to(#57a957));background-image:-moz-linear-gradient(top, #62c462, #57a957);background-image:-ms-linear-gradient(top, #62c462, #57a957);background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%, #62c462), color-stop(100%, #57a957));background-image:-webkit-linear-gradient(top, #62c462, #57a957);background-image:-o-linear-gradient(top, #62c462, #57a957);background-image:linear-gradient(top, #62c462, #57a957);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#62c462', endColorstr='#57a957', GradientType=0);text-shadow:0 -1px 0 rgba(0, 0, 0, 0.25);border-color:#57a957 #57a957 #3d773d;border-color:rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);}
+.btn:hover,.btn.primary{background-color:#339bb9;background-repeat:repeat-x;background-image:-khtml-gradient(linear, left top, left bottom, from(#5bc0de), to(#339bb9));background-image:-moz-linear-gradient(top, #5bc0de, #339bb9);background-image:-ms-linear-gradient(top, #5bc0de, #339bb9);background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%, #5bc0de), color-stop(100%, #339bb9));background-image:-webkit-linear-gradient(top, #5bc0de, #339bb9);background-image:-o-linear-gradient(top, #5bc0de, #339bb9);background-image:linear-gradient(top, #5bc0de, #339bb9);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#5bc0de', endColorstr='#339bb9', GradientType=0);text-shadow:0 -1px 0 rgba(0, 0, 0, 0.25);border-color:#339bb9 #339bb9 #22697d;border-color:rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);}
+.btn.info{text-align:left;color:#ffffff;background-color:#0064cd;background-repeat:repeat-x;background-image:-khtml-gradient(linear, left top, left bottom, from(#049cdb), to(#0064cd));background-image:-moz-linear-gradient(top, #049cdb, #0064cd);background-image:-ms-linear-gradient(top, #049cdb, #0064cd);background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%, #049cdb), color-stop(100%, #0064cd));background-image:-webkit-linear-gradient(top, #049cdb, #0064cd);background-image:-o-linear-gradient(top, #049cdb, #0064cd);background-image:linear-gradient(top, #049cdb, #0064cd);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#049cdb', endColorstr='#0064cd', GradientType=0);text-shadow:0 -1px 0 rgba(0, 0, 0, 0.25);border-color:#0064cd #0064cd #003f81;border-color:rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);}
+.btn{box-shadow:2px 2px 3px dimgray inset;
+cursor:pointer;display:inline-block;background-color:#e6e6e6;background-repeat:no-repeat;background-image:-webkit-gradient(linear, 0 0, 0 100%, from(#ffffff), color-stop(25%, #ffffff), to(#e6e6e6));background-image:-webkit-linear-gradient(#ffffff, #ffffff 25%, #e6e6e6);background-image:-moz-linear-gradient(top, #ffffff, #ffffff 25%, #e6e6e6);background-image:-ms-linear-gradient(#ffffff, #ffffff 25%, #e6e6e6);background-image:-o-linear-gradient(#ffffff, #ffffff 25%, #e6e6e6);background-image:linear-gradient(#ffffff, #ffffff 25%, #e6e6e6);padding:5px 14px 6px;text-shadow:0 1px 1px rgba(255, 255, 255, 0.75);color:#333;font-size:13px;line-height:normal;border:1px solid #ccc;border-bottom-color:#bbb;-webkit-border-radius:4px;-moz-border-radius:4px;border-radius:4px;-webkit-box-shadow:inset 0 1px 0 rgba(255, 255, 255, 0.2),0 1px 2px rgba(0, 0, 0, 0.05);-moz-box-shadow:inset 0 1px 0 rgba(255, 255, 255, 0.2),0 1px 2px rgba(0, 0, 0, 0.05);box-shadow:inset 0 1px 0 rgba(255, 255, 255, 0.2),0 1px 2px rgba(0, 0, 0, 0.05);-webkit-transition:0.1s linear all;-moz-transition:0.1s linear all;-ms-transition:0.1s linear all;-o-transition:0.1s linear all;transition:0.1s linear all;}.btn{background-position:0 -15px;color:#333;text-decoration:none;}
+.btn:focus{outline:1px dotted #666;}
+.btn.active,.btn:active{-webkit-box-shadow:inset 0 2px 4px rgba(0, 0, 0, 0.25),0 1px 2px rgba(0, 0, 0, 0.05);-moz-box-shadow:inset 0 2px 4px rgba(0, 0, 0, 0.25),0 1px 2px rgba(0, 0, 0, 0.05);box-shadow:inset 0 2px 4px rgba(0, 0, 0, 0.25),0 1px 2px rgba(0, 0, 0, 0.05);}
+.btn.disabled{cursor:default;background-image:none;filter:progid:DXImageTransform.Microsoft.gradient(enabled = false);filter:alpha(opacity=65);-khtml-opacity:0.65;-moz-opacity:0.65;opacity:0.65;-webkit-box-shadow:none;-moz-box-shadow:none;box-shadow:none;}
+.btn[disabled]{cursor:default;background-image:none;filter:progid:DXImageTransform.Microsoft.gradient(enabled = false);filter:alpha(opacity=65);-khtml-opacity:0.65;-moz-opacity:0.65;opacity:0.65;-webkit-box-shadow:none;-moz-box-shadow:none;box-shadow:none;}
+.btn.large{font-size:15px;line-height:normal;padding:9px 14px 9px;-webkit-border-radius:6px;-moz-border-radius:6px;border-radius:6px;}
+.btn.small{padding:3px 5px 3px;font-size:12px;}
+button.btn::-moz-focus-inner,input[type=submit].btn::-moz-focus-inner{padding:0;border:0;}
+
+input#nominatim	{
+	padding-left: 0.1em; padding-right: 0.1em;
+	 overflow: hidden; background-color:#FFF8C6;
+	 font-size:90%;
+}
+input#nominatim:focus {
+	background:white;
+}		
+input#nominatim_query.keyboardInput{
+	line-height:1.2em;
+	color:#366;
+	border: 0.1em solid red;
+    -webkit-border-radius: 0.3em;
+    -moz-border-radius:    0.3em; 
+    border-radius:         0.3em; 
+}
+input#nominatim_query.keyboardInput:placeholder-shown {
+	color:#69A;
+	border: none;
+}
+/* ---------- Small devices Style ---------- */
 @media screen and (max-width:640px) {
 	#contribuez, #legende {
             width : 95%;
-            max-width : 95%;
-			float: none;
 	}
 	#naviguer {
             width : 95%;
-            max-width : 95%;
-			float: left;
-	}
-	#section_gauche
-	{
-	  font-size: 95%;
 	}
 	h1 {
 		font-size:1.05em;
@@ -1087,147 +1234,80 @@ function init_carte(){
 	.ligne {
 		 display:inline;
 	 }
-	.dimcarte {
-		 width:100%;height:400px;
-	}
 }		
-	
-/* style pour panneau glissant */
-#controls {
-	clear:both;
-	border-top : 0.3em #039 solid;
-	background-color:#039;
-	color:white;
-	padding-top:0.2em;
-  }
-#search_panel {
-	float : right; 
-	margin-right: 3em;
-	position:relative;
-/*	width:65%;
-	height:1.7em; */
-	text-align:left;
-	font-size:85%;
-  }
-#search_panel img, #search_panel form, #search_panel fieldset {
-	display:inline;
-  }
-#result {
-	border: 2px #039 solid;
-	background-color:#fff8c6;
-	color:#039;
-	padding-bottom:0.3em;
-  }
-#control_panel {
-	float : left;
-/*	width:30%; */
-	position:relative;
-	text-align:right;
-  }
-#control_panel, #control_panel a{
-	display:inline;
-  }
-#control_panel:hover , #control_panel a:hover {
-	background-color:#eeeaed;
-}
-a#controlbtn{
-	float: left;
-	background-color:#EAE9EA;
-	color:#039;
-	font-weight:bold;
-	font-size:1.2em;
-	padding:0.3em;
-	text-decoration: none;
-}
-#controltxt{
-	font-size:small;
-}
-// afficher Contribuez
-$('.bloc_contribuez').click(afficher_contribuez());
-/*$('.bloc_contribuez').click(function(){
-	document.getElementById("contribuez").className="l100";
-});*/
- .btnsearch{
-  background:#fef url(img/search.jpg) no-repeat left top;margin-left:0.2em;padding:0.3em;text-decoration:none;
-}
-
-.btn.error{background-color:#c43c35;background-repeat:repeat-x;background-image:-moz-linear-gradient(top, #ee5f5b, #c43c35);background-image:-ms-linear-gradient(top, #ee5f5b, #c43c35);background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%, #ee5f5b), color-stop(100%, #c43c35));background-image:-webkit-linear-gradient(top, #ee5f5b, #c43c35);background-image:-o-linear-gradient(top, #ee5f5b, #c43c35);background-image:linear-gradient(top, #ee5f5b, #c43c35);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ee5f5b', endColorstr='#c43c35', GradientType=0);text-shadow:0 -1px 0 rgba(0, 0, 0, 0.25);border-color:#c43c35 #c43c35 #882a25;border-color:rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);}
-.btn.success{background-color:#57a957;background-repeat:repeat-x;background-image:-khtml-gradient(linear, left top, left bottom, from(#62c462), to(#57a957));background-image:-moz-linear-gradient(top, #62c462, #57a957);background-image:-ms-linear-gradient(top, #62c462, #57a957);background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%, #62c462), color-stop(100%, #57a957));background-image:-webkit-linear-gradient(top, #62c462, #57a957);background-image:-o-linear-gradient(top, #62c462, #57a957);background-image:linear-gradient(top, #62c462, #57a957);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#62c462', endColorstr='#57a957', GradientType=0);text-shadow:0 -1px 0 rgba(0, 0, 0, 0.25);border-color:#57a957 #57a957 #3d773d;border-color:rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);}
-.btn:hover,.btn.primary{background-color:#339bb9;background-repeat:repeat-x;background-image:-khtml-gradient(linear, left top, left bottom, from(#5bc0de), to(#339bb9));background-image:-moz-linear-gradient(top, #5bc0de, #339bb9);background-image:-ms-linear-gradient(top, #5bc0de, #339bb9);background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%, #5bc0de), color-stop(100%, #339bb9));background-image:-webkit-linear-gradient(top, #5bc0de, #339bb9);background-image:-o-linear-gradient(top, #5bc0de, #339bb9);background-image:linear-gradient(top, #5bc0de, #339bb9);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#5bc0de', endColorstr='#339bb9', GradientType=0);text-shadow:0 -1px 0 rgba(0, 0, 0, 0.25);border-color:#339bb9 #339bb9 #22697d;border-color:rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);}
-.btn.info{text-align:left;color:#ffffff;background-color:#0064cd;background-repeat:repeat-x;background-image:-khtml-gradient(linear, left top, left bottom, from(#049cdb), to(#0064cd));background-image:-moz-linear-gradient(top, #049cdb, #0064cd);background-image:-ms-linear-gradient(top, #049cdb, #0064cd);background-image:-webkit-gradient(linear, left top, left bottom, color-stop(0%, #049cdb), color-stop(100%, #0064cd));background-image:-webkit-linear-gradient(top, #049cdb, #0064cd);background-image:-o-linear-gradient(top, #049cdb, #0064cd);background-image:linear-gradient(top, #049cdb, #0064cd);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#049cdb', endColorstr='#0064cd', GradientType=0);text-shadow:0 -1px 0 rgba(0, 0, 0, 0.25);border-color:#0064cd #0064cd #003f81;border-color:rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);}
-.btn{box-shadow:2px 2px 3px dimgray inset;
-cursor:pointer;display:inline-block;background-color:#e6e6e6;background-repeat:no-repeat;background-image:-webkit-gradient(linear, 0 0, 0 100%, from(#ffffff), color-stop(25%, #ffffff), to(#e6e6e6));background-image:-webkit-linear-gradient(#ffffff, #ffffff 25%, #e6e6e6);background-image:-moz-linear-gradient(top, #ffffff, #ffffff 25%, #e6e6e6);background-image:-ms-linear-gradient(#ffffff, #ffffff 25%, #e6e6e6);background-image:-o-linear-gradient(#ffffff, #ffffff 25%, #e6e6e6);background-image:linear-gradient(#ffffff, #ffffff 25%, #e6e6e6);padding:5px 14px 6px;text-shadow:0 1px 1px rgba(255, 255, 255, 0.75);color:#333;font-size:13px;line-height:normal;border:1px solid #ccc;border-bottom-color:#bbb;-webkit-border-radius:4px;-moz-border-radius:4px;border-radius:4px;-webkit-box-shadow:inset 0 1px 0 rgba(255, 255, 255, 0.2),0 1px 2px rgba(0, 0, 0, 0.05);-moz-box-shadow:inset 0 1px 0 rgba(255, 255, 255, 0.2),0 1px 2px rgba(0, 0, 0, 0.05);box-shadow:inset 0 1px 0 rgba(255, 255, 255, 0.2),0 1px 2px rgba(0, 0, 0, 0.05);-webkit-transition:0.1s linear all;-moz-transition:0.1s linear all;-ms-transition:0.1s linear all;-o-transition:0.1s linear all;transition:0.1s linear all;}.btn{background-position:0 -15px;color:#333;text-decoration:none;}
-.btn:focus{outline:1px dotted #666;}
-.btn.active,.btn:active{-webkit-box-shadow:inset 0 2px 4px rgba(0, 0, 0, 0.25),0 1px 2px rgba(0, 0, 0, 0.05);-moz-box-shadow:inset 0 2px 4px rgba(0, 0, 0, 0.25),0 1px 2px rgba(0, 0, 0, 0.05);box-shadow:inset 0 2px 4px rgba(0, 0, 0, 0.25),0 1px 2px rgba(0, 0, 0, 0.05);}
-.btn.disabled{cursor:default;background-image:none;filter:progid:DXImageTransform.Microsoft.gradient(enabled = false);filter:alpha(opacity=65);-khtml-opacity:0.65;-moz-opacity:0.65;opacity:0.65;-webkit-box-shadow:none;-moz-box-shadow:none;box-shadow:none;}
-.btn[disabled]{cursor:default;background-image:none;filter:progid:DXImageTransform.Microsoft.gradient(enabled = false);filter:alpha(opacity=65);-khtml-opacity:0.65;-moz-opacity:0.65;opacity:0.65;-webkit-box-shadow:none;-moz-box-shadow:none;box-shadow:none;}
-.btn.large{font-size:15px;line-height:normal;padding:9px 14px 9px;-webkit-border-radius:6px;-moz-border-radius:6px;border-radius:6px;}
-.btn.small{padding:3px 5px 3px;font-size:12px;}
-button.btn::-moz-focus-inner,input[type=submit].btn::-moz-focus-inner{padding:0;border:0;}
-div#nominatim	{
-	padding-left: 0.1em; padding-right: 0.1em;
-	 overflow: hidden; background-color:#FFF8C6;
-	 font-size:90%;
-}
-// http://www.francoischarron.com/les-zones-dacces-gratuit-a-internet-wifi-au-quebec/-/DuVQ8PjjnF/
-// http://trac.osgeo.org/openlayers/wiki/SettingZoomLevels
-/*
-TMS Layers
-Setting the resolutions array in the traditional manner does not work with TMS layers by design. Instead of removing values from the resolutions array to restrict zoom levels (for unrendered TMS layers or other reasons), include both a serverResolutions array and a resolutions array. The serverResolutions array should include all resolutions available (whether rendered or not) on the server, while the resolutions array should have all resolutions that are presented to the user - therefore the resolutions array should be a subset of serverResolutions. For instance,
-resolutions: [0.17578125, 0.087890625, 0.0439453125],
-serverResolutions: [0.703125, 0.3515625, 0.17578125, 0.087890625, 0.0439453125],
-
-*/
 </style> 
-<link href="http://openlayers.org/api/2.13/theme/default/style.css" type="text/css" rel="stylesheet"></head>
-<link rel="stylesheet" href="http://openlayers.org/api/2.13/theme/default/style.mobile.css" type="text/css">
-<body onload="init_carte()">
-<div id="wifi">
-	<div id="section_droite" class="l100">
-		<div id="controls">
-			<div id="control_panel"><a id="controlbtn" class="open" href="#" onclick="SlidePanel();" title="Agrandir la Carte">&raquo; <span id="controltxt"> Légende</span> </a> &nbsp; </div>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+</head>
+<body onload="init_map()">
+
+	<header>	
+	<div id="section_principale" class="l100">
+		<div id="sect1">
+			<a id="localiser"  href="#" onclick="javascript:req_localiser();return false;" title="<?php echo $i18n['tlocaliser'];?>"><?php echo $i18n["localiser"];?></a>
+		</div>
+		<div id="sect2">
+			<h1> <?php echo $i18n["Zones Wifi"];?> </h1> &nbsp; 
+		</div>
 			<div id="search_panel">
 			<form action="" method="get" onsubmit="fragmapquest();return false;">
-				<a href="https://github.com/pierzen/zoneswifi/"><h1>Zones Wifi</h1></a>
-				&nbsp;<!--img src="img/wifi-vert-droite.png" title="wifi" /-->&nbsp;:&nbsp;
-				<input vki_attached="true" id="nominatim_query" class="keyboardInput" title="Exemples :&#10; &#10;Grande bibliotheque, Montréal&#10;475, boulevard De Maisonneuve Est, Montréal&#10;Café République, Montréal" placeholder="Ville, province ..." onfocus="if(this.value == 'Localité au Mali ...') { this.value = ''; }" name="q" size="36" lang="fr" type="text"> <!-- <img title="Display virtual keyboard interface" class="keyboardInputInitiator" alt="Display virtual keyboard interface" src="http://pierzen.dev.openstreetmap.org/hot/openlayers/js/greywyvern-keyboard.png"> --> &nbsp;
-				<button class="btn small" type="submit"><img src="img/nominatim-search.png" alt="" value="point" style="height:16px;"> Rechercher</button> &nbsp; 
+				<span id="nominatim_query_input" class="cadre">
+				<input type="text" vki_attached="true" required id="nominatim_query" class="keyboardInput" title="ie :&#10; &#10;Roma, Italia&#10;Tour Eiffel, Paris&#10;Taj Mahal, India" 
+				placeholder="<?php echo $i18n["msg_search"];?>" name="q" size="33" lang="<?php echo $lang;?>" type="search"> 
+				</span>
+				<button class="btn small" type="submit"><img src="img/nominatim-search.png" alt="" value="point" style="height:16px;">
+				<?php echo $i18n["rechercher"];?></button> &nbsp; 
 			 </form>
+		&nbsp; &nbsp;
+
+		<form name="langue" action="<?php echo htmlentities($_SERVER['PHP_SELF']); ?>" method="post">
+			<select name="lang" id="lang"  onchange='this.form.submit()'>
+				<option value="fr" <?php if ($lang=="fr") {echo " selected ";} ?> >Fr</option>
+				<option value="en" <?php if ($lang=="en") {echo " selected ";} ?> >En</option>
+			</select>
+			<input type="hidden" name="zoom" id="zoom" value="<?php echo $zoom;?>" />
+			<input type="hidden" name="lat" id="lat" value="<?php echo $lat;?>" />
+			<input type="hidden" name="lon" id="lon" value="<?php echo $lon;?>" />
+		</form>
 			</div>
-			<div classs="clearboth"><br><br></div>
+			<div class="clearboth" style="clear:both;"></div>
+		</div>		
 		</div>
-		<div id="message"></div>
-		<div id="result" class="cacher"></div>
-		<div id="map" class="smallmap olMap dimcarte"></div>
+		</header>
+	<div id="message"></div>
+	<div id="result" class="hidden"> Hidden</div>
+	<div id="map" style="height:89%;">
 	</div>
-	<div id="section_gauche" class="cacher">
+	<footer>
+	<div id="credit">
+	<a href='https://openlayers.org/'><img class="ico" src="../img/openlayers_logo70.png"/></a>
+	<a title='Application by' href='https://twitter.com/pierzen'>pierzen</a>
+	</div>
+	<div id="map_attribution">
+	</div>
+	<div id="options">
+    <button type="button" style="font-size:90%;" class="btn btn-mini infos" data-toggle="modal" data-target="#mInfos" onclick="window.location.href='#mInfos'">Infos</button>
+	</div>
+	</footer>
+
+	<div class="modal fade" id="mInfos" role="dialog">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+        <div class="modal-body">
 		<div id="naviguer">
-		<p>Les icônes des <em class="bleu">Points Wifi</em>, sur la carte du Sans Fil, permettent de localiser les zones d'accès gratuit au Wifi et les divers réseaux Sans Fil.</p><p>Cliquez sur ces icônes pour afficher la description des lieux.</p>
-	<p> Recherchez une ville et les donnnées seront extraites pour la zone affichée à l'écran. De là, il est possible de zoomer et voir le détail sur les différents points Wifi.
-	</p>
+		<h3>Infos</h3>
+		<?php echo $i18n["naviguer"];?> 
 		</div>
-	<div id="bouton_contribuez">
-	<h2><a href="#" class="btn small info" onclick="afficher_contribuez()">Données&nbsp;OSM</a></h2>
+
+		<div id="contribuez">
+			<h3>Contributions</h3>
+			<?php echo $i18n["contribuez"];?> 
+		</div>		
+		</div>
+        </div>
+      </div>		
 	</div>
-	<div id="contribuez" class="cacher">
-		<h1>Contribuez à OpenStreetMap et mettez à jour les infos sur les points Wifi gratuits</h1>
-		<p>Inscrivez-vous comme contributeur <a href="http://www.openstreetmap.org/?q=montreal+quebec#map=11/45.5626/-73.6791&layers=H">OpenStreetMap</a> pour ajouter ou mettre à jour les points de service.
-		</p>
-		<p>Les attributs suivants permettre de décrire les points wifi :</p>
-		<ul>
-		<li> <em>internet_access=wlan</em> : Point wifi</li>
-		<li><em>internet_access:operator = (nom) ou (adresse internet) </em> indique à quel réseau est associé ce point</li>
-		<li><em>internet_access:ssid = Identification du réseau</em> dans liste des points wifi</li>
-		</ul>
-	</div>
-		
-		<div style="clear:both;"></div>
-	</div>
-<!--	<div id="baspage">
-	Données extraites de la base de données OpenStreetMap via le <a href="http://overpass-turbo.eu/">Serveur de requêtes Overpass</a>.
-	&nbsp; &copy; <a href="https://github.com/pierzen/zoneswifi/">Pierre Béland, 2013</a>
-	</div>
--->
-</div>
 </body>
 </html>
