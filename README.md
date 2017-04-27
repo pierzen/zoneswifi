@@ -1,32 +1,36 @@
 Wifi Zones online map
 =====================
 
-This OpenLayers Dynamic POI map shows Wifi points from OpenStreetMap database. It only requires to develop the client side. The Overpass API service assures the server side work, extracting Wifi related POI's.
+Online map : http://pierzen.dev.openstreetmap.org/zoneswifi/
 
-Zoom levels are limited to avoid extensive API requests.
+Shows worldwide Free Wifi Hotsposts.
 
 To locate Wifi Spots
 --------------------
 
-Users locate towns to see the Wifi points. Once the search is completed, clusters of points are represented by circle and indiviudal Wifi points by a Wifi icon.
+Search Panel let's locate towns to see the Wifi points. It is also possible to use the Locate me button to center the map where to our current localisation.
 
-We plan to add a button to request for Wifi points inside the viewport. This would let users navigate through the map and then ask for Wifi points.
+These two actions trigger a query to the Overpass Service. The Hospots Clusters of points are represented by circle and indiviudal Wifi points by a Wifi icon.
+
+Urlhash is provided (ie zoom, lat, lon coordinates). Access to a specific zone is then possible using url.
 
 Technical Notes
 =================
 
-url on the online map : http://pierzen.dev.openstreetmap.org/zoneswifi/
+It only requires to develop the client side. Hotspots are extracted from the OpenStreetMap database using the Overpass API service. 
+
+The geolocate function is triggered from a user request (Locate me button).
+
+Zoom levels are limited to avoid extensive API requests.
 
 Searches using Nominatim
 ------------------------
 
-Users make Nominatim Search to locate cities. From this point, the viewport boundaries are calculated at zoom 11. An Overpass API request is made to extract the Wifi POI's for this bounding box.
+Users make Nominatim Search to locate cities. From this point, the viewport boundaries are calculated at zoom 11 minimum. An Overpass API request is made to extract the Wifi POI's for this bounding box.
 
-Nominatim source code comes from OpenStreetMap user suncobalt.
-http://wiki.openstreetmap.org/wiki/User:SunCobalt/OpenLayers_Suche
+Nominatim queries to the Mapquest service.
 
 nominatim-i8n.csv Nominatim Results Translation file have been edited to add the french translation.
-
 
 Wifi Layer Display Cluster Strategy
 ----------------------
